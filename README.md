@@ -108,6 +108,40 @@ Gateway: 192.168.1.1
    - Flag:
 ![alt text](https://github.com/alesanv/RedvsBlue/blob/main/Images/RedTeam/6_2_flag.PNG "Flag")
 
+
+
 # Blue Team
 
+### Analysis: Identifying the Port Scan
 
+1. Attack occurred between 18:05and 18:30 (Jun/12/2021)
+2. Smaller spike between 18:10 and 18:15 is a Port Scan.
+   ![alt text](https://github.com/alesanv/RedvsBlue/blob/main/Images/BlueTeam/1_1_PortScan.PNG "Port Scan")
+3. Source of the scan is: 192.168.1.90 (Kali Machine)
+4. We can see that it is a port scan because there's constant traffic to various destination ports even when those ports are not in use and there's some icmp packets too.
+   ![alt text](https://github.com/alesanv/RedvsBlue/blob/main/Images/BlueTeam/1_2_PortScan_Destination_Ports.PNG "Destination Ports")
+   
+   
+### Analysis: Finding the Request for the Hidden Directory
+
+1. The requests for the hidden directory occurred between 18:15 and 18:25 (Jun/12/2021).
+2. A total of 16,284 requests were made.
+   ![alt text](https://github.com/alesanv/RedvsBlue/blob/main/Images/BlueTeam/2_1_HiddenDir_Requests.PNG "Hidden Directory Requests")
+3. The file requested from this directory is: connect_to_corp_server, which contains the information about how to connect to the WebDAV application.
+
+   
+### Analysis: Uncovering the Brute Force Attack
+
+1. The number of requests made during the brute force attack were: 16,284.
+   ![alt text](https://github.com/alesanv/RedvsBlue/blob/main/Images/BlueTeam/3_1_BF_HydraUserAgent.PNG "Brute Force Attack")
+2. The number of requests made before the attacker discovered the password were: 16,282.
+   ![alt text](https://github.com/alesanv/RedvsBlue/blob/main/Images/BlueTeam/4_1_BF_hits_before_correct_pswd.PNG "Brute Force Attack unsuccessful requests")
+
+
+### Analysis: Finding the WebDAV Connection
+
+1. There were 80 requests made to WebDAV during the attack.
+   ![alt text](https://github.com/alesanv/RedvsBlue/blob/main/Images/BlueTeam/5_1_webdav_requests.PNG "WebDAV requests")
+2. The files requested were mainly:
+   - passwd.dav (containing ryan’s hashed password), and 
+   - meterpreter.php (payload)
