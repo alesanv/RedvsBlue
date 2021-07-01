@@ -1,6 +1,6 @@
 
 # RedvsBlue
-Project where the role of a pentester and a SOC analyst are explored
+Summary: Project where the role of a pentester and a SOC analyst are explored
 
 
 ## Network Topology
@@ -112,6 +112,8 @@ Gateway: 192.168.1.1
 
 # Blue Team
 
+## Analysis using Kibana
+
 ### Analysis: Identifying the Port Scan
 
 1. Attack occurred between 18:05and 18:30 (Jun/12/2021)
@@ -145,3 +147,85 @@ Gateway: 192.168.1.1
 2. The files requested were mainly:
    - passwd.dav (containing ryan’s hashed password), and 
    - meterpreter.php (payload)
+
+
+
+## Proposed Alarms and Mitigation Strategies
+
+### Mitigation: Blocking the Port Scan
+1. Alarms:
+   - If there are high amounts of requests from the same IP address to ports not in use, then blacklist that IP Address.
+   - We would recommend when more than 20 requests are made in less than 1 minute.
+2. System Hardening:
+   - Setup a Firewall and add the following rules: 
+         - Allow ping Echo-Request outbound and Echo-Reply messages inbound.
+         - Allow traceroute TTL-Exceeded and Port-Unreachable messages inbound.
+   - Schedule an audit of the system every Tuesday to patch its software and close any ports not in use.
+
+
+### Mitigation: Finding the Request for the Hidden Directory
+1. Alarms:
+   - Alert when the number of failed attempts to access this directory exceeds 60 attempts per minute. 
+   - Alert when there’s 5 attempts per minute to access the hidden directory from IP addresses not in our whitelist.
+2. System Hardening:
+   - This is a Web Server that needs to be accessed by possible customers, with the exception of the secret folder (which is not public). Whitelist the IP addresses that need access to the secret folder. Add the following to apache’s .htaccess file:
+       ```json
+           <Limit GET POST PUT>
+                Order deny,allow
+                Deny from all
+                Allow from <IP address here>
+                Allow from <IP address here>
+                Allow from <IP address here>
+            </Limit>
+        ```
+
+   - Disable Apache Directory listing. Add the following to the .htaccess file at root level or to any directory where we want to avoid directory listing:
+   ```json
+      <Directory /var/www/mysite>
+         Options -Indexes
+      </Directory>
+   ```
+
+### Mitigation: Preventing Brute Force Attacks
+1. Alarms:
+   - Alert when there’s more than 15 failed attempts per minute to login into a user’s account. 
+   - Alert when there’s more than 15 failed attempts per minute to login from the same IP address.
+2. System Hardening:
+   - Establish strong password policies, set password length to a minimum of 12 characters and set its expiration to 3 months with the past 4 passwords not allowed as new password.
+   - Implement multi factor authentication.
+   - After 3 failed login attempts, use CAPTCHA to prevent automated attacks.
+   - Send an HTTP 200 success code (instead of error codes) and direct users to a page explaining the failed password attempt (to fool some automated tools).
+   - Lock out user accounts that unsuccessfully try to login more than 15 times in one minute, let the lockout duration be 10 minutes. 
+   - Hashed passwords should be salted.
+
+
+### Mitigation: Detecting the WebDAV Connection
+1. Alarms:
+   - Alert when any non-whitelisted IP attempts to connect to WebDAV. 
+2. System Hardening:
+   - Limit access to WebDAV to only whitelisted IP addresses. Add the following to the .htaccess file:
+     ```json
+        <Limit GET POST PUT>
+             Order deny,allow
+             Deny from all
+             Allow from <IP address here>
+             Allow from <IP address here>
+             Allow from <IP address here>
+        </Limit>
+     ```
+   - Maintain the WebDAV application up to date (check for patches every week and install them if available).
+
+
+### Mitigation: Identifying Reverse Shell Uploads
+1. Alarms:
+   - Alert when any HTTP PUT request is sent to the server for executable files. 
+2. System Hardening:
+   - Install antivirus software which will screen all incoming files and send to quarantine any executables or known malware.
+   - Disable server-side handlers for the WebDAV directory to prevent the execution of executable files. In the directory’s .htaccess file add:
+     ```json
+        <Directory /path/to/restrict>
+            AddHandler default-handler
+        </Directory>
+     ```
+
+
